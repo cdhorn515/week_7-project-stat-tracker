@@ -1,14 +1,19 @@
 var mongoose = require('mongoose');
 
-var activitesSchema = new mongoose.Schema({
-  title: String,
-  date: {
-    type: Date,
-    default: Date.now
+var activitiesSchema = new mongoose.Schema({
+  activity: {
+    type: String,
+    unique: true
   },
-  trackedStat: Number
+  trackedStats: [{
+    amount: Number,
+    date: {
+      type: Date,
+      default: Date.now
+    }
+  }]
 });
 
 const Activities = mongoose.model('Activities', activitiesSchema);
 
-module.exports = Activies;
+module.exports = Activities;
