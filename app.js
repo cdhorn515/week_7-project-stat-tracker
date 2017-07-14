@@ -82,19 +82,18 @@ app.delete('/api/activities/:id', function (req, res){
 
 
 //add tracked data for a day--can override data for a day already tracked-
-app.put('/api/activities/:id/stats', function(req, res) {
-  var date = new Date();
-  Activities.findByIdAndUpdate(
-  {_id: req.params.id},
-  {$push: {trackedStats: {amount: req.body.amount, date: date}}},
-  {upsert: true, new: true},
-  function(error, activity) {
-    if (error) {
-      console.log('error');
-    }
-    res.json(activity);
+app.post('/api/activities/:id', function(req, res) {
+  Activities.findOne(
+  {_id: req.params.id}).then(function(result){
+    result.trackedStats.push({
+      amount: req.body.amount,
+      date: req.body.date
+    });
+      result.save();
+      res.json(result);
+    });
   });
-});
+
 
 //delete one day of activity--find one and delete
 app.delete('/api/stats/:id', function(req, res) {
