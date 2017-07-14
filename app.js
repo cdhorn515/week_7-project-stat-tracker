@@ -48,11 +48,11 @@ app.get('/api/activities', function (req, res) {
 
 //create a new activity to track
 app.post('/api/activities', function(req, res) {
-  var addedActivity = new Activities({activity: req.body.activity}).save().then(function(result){
+  var newActivity = new Activities({activity: req.body.activity}).save().then(function(result){
     var addedTrackedStats = {amount: req.body.trackedStats[0].amount, date: req.body.trackedStats[0].date};
     result.trackedStats.push(addedTrackedStats);
     result.save().then(function(){
-      res.json(addedActivity);
+      res.json(newActivity);
   });
   });
 });
@@ -61,7 +61,6 @@ app.post('/api/activities', function(req, res) {
 app.get('/api/activities/:id', function(req, res) {
   var id = req.params.id;
    Activities.findOne({_id: id}).then(function(result) {
-       console.log('all activities named ' + result);
        res.json(result);
 });
 });
@@ -84,15 +83,17 @@ app.delete('/api/activities/:id', function (req, res){
 
 //add tracked data for a day--can override data for a day already tracked-
 app.put('/api/activities/:id/stats', function(req, res) {
-  Activities.updateOne(
+  var date = new Date();
+  Activities.findByIdAndUpdate(
   {_id: req.params.id},
-  {
-    $set: {activity: req.body.activity},
-    $push: {trackedStats: {"amount": req.body.amount, "date": new Date()}}
-  },
-  {upsert: true}
-);
-    res.json(newResult);
+  {$push: {trackedStats: {amount: req.body.amount, date: date}}},
+  {upsert: true, new: true},
+  function(error, activity) {
+    if (error) {
+      console.log('error');
+    }
+    res.json(activity);
+  });
 });
 
 //delete one day of activity--find one and delete
