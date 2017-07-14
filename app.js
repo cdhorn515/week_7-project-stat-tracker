@@ -48,27 +48,22 @@ app.get('/api/activities', function (req, res) {
 
 //create a new activity to track
 app.post('/api/activities', function(req, res) {
-  Activities.create({name: req.body.activity});
-    trackedStats.amount.push(req.body.trackedStats).then(function(newActivity){
-      console.log(newActivity);
-    }).catch(function(error){
-      console.log('oops something went wrong');
-    });
-    res.json({});
+  var addedActivity = new Activities({activity: req.body.activity}).save().then(function(result){
+    var addedTrackedStats = {amount: req.body.trackedStats[0].amount, date: req.body.trackedStats[0].date};
+    result.trackedStats.push(addedTrackedStats);
+    result.save().then(function(){
+      res.json(addedActivity);
+  });
+  });
 });
 
 //show information about one activity that is being tracked--get title from id and show all for that title
 app.get('/api/activities/:id', function(req, res) {
   var id = req.params.id;
-   Activites.findOne({_id: id}).then(function(result) {
-     var activity = result.activity;
-     Activities.find({activity: activity}).then(function(activities){
-       console.log('all activities named ' + activity);
-     }).catch(function(error){
-       console.log('error on getting activity info');
-     });
-     res.json({activites});
-   });
+   Activities.findOne({_id: id}).then(function(result) {
+       console.log('all activities named ' + result);
+       res.json(result);
+});
 });
 
 //update attribute of tracked activity, not trackedStat--should be patch not put?
@@ -80,22 +75,24 @@ app.put('/api/activities/:id', function(req, res) {
 });
 
 //delete one activity being tracked--find id, get title, delete all with that title
-app.delete('/api.activities/:id', function (req, res){
-  Activities.find({_id: req.params.id}).then(function(result){
-    var activity = result.activity;
-    Activities.deleteOne({activity: activity}).then(function(){
+app.delete('/api/activities/:id', function (req, res){
+    Activities.deleteOne({_id: req.params.id}).then(function(){
       res.json({});
     });
   });
-});
+
 
 //add tracked data for a day--can override data for a day already tracked-
 app.put('/api/activities/:id/stats', function(req, res) {
-  Activities.find({_id: req.params.id}).then(function(result){
-    result.activity = req.body.activity;
-    result.save();
+  Activities.updateOne(
+  {_id: req.params.id},
+  {
+    $set: {activity: req.body.activity},
+    $push: {trackedStats: {"amount": req.body.amount, "date": new Date()}}
+  },
+  {upsert: true}
+);
     res.json(newResult);
-  });
 });
 
 //delete one day of activity--find one and delete
