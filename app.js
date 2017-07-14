@@ -81,18 +81,29 @@ app.put('/api/activities/:id', function(req, res) {
 
 //delete one activity being tracked--find id, get title, delete all with that title
 app.delete('/api.activities/:id', function (req, res){
-  
-
+  Activities.find({_id: req.params.id}).then(function(result){
+    var activity = result.activity;
+    Activities.deleteOne({activity: activity}).then(function(){
+      res.json({});
+    });
+  });
 });
 
-//add tracked data for a day--can override data for a day already tracked--should be put not post?
+//add tracked data for a day--can override data for a day already tracked-
 app.put('/api/activities/:id/stats', function(req, res) {
-
+  Activities.find({_id: req.params.id}).then(function(result){
+    result.activity = req.body.activity;
+    result.save();
+    res.json(newResult);
+  });
 });
 
 //delete one day of activity--find one and delete
 app.delete('/api/stats/:id', function(req, res) {
-
+  Activities.deleteOne({_id: req.params.id}).then(function(result) {
+    console.log('deleted');
+    res.json({});
+  });
 });
 
 // var activities = new Activities({
