@@ -4,6 +4,8 @@ const Users = require('./models/users');
 const bodyParser = require('body-parser');
 const parseurl = require('parseurl');
 const express = require('express');
+const middleware = require('./middleware');
+const path = require('path');
 
 const app = express();
 
@@ -18,36 +20,36 @@ app.use(bodyParser.urlencoded({
   extended: false
 }));
 
-passport.use(new BasicStrategy(
-   function(username, password, done) {
-    Users.findOne({username: username, password: password}).then(function(user) {
-      if (!user) {
-         return done(null, false);
-       } else {
-         return done(null, username);
-       }
-     });
-   }
- ));
+app.use('/static', express.static(path.join(__dirname, 'public')));
+
+middleware.passportInitiate();
+// passport.use(new BasicStrategy(
+//    function(username, password, done) {
+//     Users.findOne({username: username, password: password}).then(function(user) {
+//       if (!user) {
+//          return done(null, false);
+//        } else {
+//          return done(null, username);
+//        }
+//      });
+//    }
+//  ));
 
 
- //passport middleware
-app.use(function (req, res, next) {
-  passport.authenticate('basic', {session: false});
-  next();
-});
+ // passport middleware
+app.use(middleware.validateUser());
 
 //api routes:
 
 //show list of all activities being tracked, link to individ pages
-app.get('/api/activities', function (req, res) {
+app.get('/api/activities', passport.authenticate('basic', {session: false}), function (req, res) {
   Activities.find({}).then(function(results){
     res.json(results);
   });
 });
 
 //create a new activity to track
-app.post('/api/activities', function(req, res) {
+app.post('/api/activities', passport.authenticate('basic', {session: false}), function(req, res) {
   var newActivity = new Activities({activity: req.body.activity}).save().then(function(result){
     var addedTrackedStats = {amount: req.body.trackedStats[0].amount, date: req.body.trackedStats[0].date};
     result.trackedStats.push(addedTrackedStats);
@@ -58,7 +60,7 @@ app.post('/api/activities', function(req, res) {
 });
 
 //show information about one activity that is being tracked--get title from id and show all for that title
-app.get('/api/activities/:id', function(req, res) {
+app.get('/api/activities/:id', passport.authenticate('basic', {session: false}), function(req, res) {
   var id = req.params.id;
    Activities.findOne({_id: id}).then(function(result) {
        res.json(result);
@@ -66,7 +68,7 @@ app.get('/api/activities/:id', function(req, res) {
 });
 
 //update attribute of tracked activity, not trackedStat--should be patch not put?
-app.put('/api/activities/:id', function(req, res) {
+app.put('/api/activities/:id', passport.authenticate('basic', {session: false}), function(req, res) {
   Activities.updateOne({_id: req.params.id},
   {activity: req.body.activity}).then(function(newActivity){
     res.json(newActivity);
@@ -74,7 +76,7 @@ app.put('/api/activities/:id', function(req, res) {
 });
 
 //delete one activity being tracked--find id, get title, delete all with that title
-app.delete('/api/activities/:id', function (req, res){
+app.delete('/api/activities/:id', passport.authenticate('basic', {session: false}), function (req, res){
     Activities.deleteOne({_id: req.params.id}).then(function(){
       res.json({});
     });
@@ -82,7 +84,7 @@ app.delete('/api/activities/:id', function (req, res){
 
 
 //add tracked data for a day--can override data for a day already tracked-
-app.post('/api/activities/:id/trackedStats', function(req, res) {
+app.post('/api/activities/:id/trackedStats', passport.authenticate('basic', {session: false}), function(req, res) {
   Activities.findOne(
   {_id: req.params.id}).then(function(result){
     result.trackedStats.push({
