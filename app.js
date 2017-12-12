@@ -5,7 +5,7 @@ const bodyParser = require('body-parser');
 const parseurl = require('parseurl');
 const express = require('express');
 const middleware = require('./middleware');
-const path = require('path');
+const path = require('path')
 
 const app = express();
 
@@ -37,7 +37,7 @@ middleware.passportInitiate();
 
 
  // passport middleware
-app.use(middleware.validateUser());
+app.use(middleware.validateUser);
 
 //api routes:
 
